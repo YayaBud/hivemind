@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hivemind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="explorer.css?v=20261018-readable4">
+<style>
+/* Layout: one calm page. Top = the shared memory (who wrote what, whose thinking used it).
+   Bottom = one card per agent with its own chat and thinking. A drawer on the right shows
+   the full story of whatever is clicked. White canvas, ink for structure, green for memory. */
+:root{
+  --bg:#FFFFFF; --soft:#F6F8F7; --line:#E5EAE7; --edge:#CBD5CF;
+  --ink:#111816; --muted:#66756D; --faint:#9AA7A0;
+  --green:#16A34A; --green-deep:#0E7A37; --green-soft:#E9F7EE; --green-line:#B7E3C6;
+  --f:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Geist Mono',ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.wrap{max-width:1480px;margin:0 auto;padding:0 max(24px,env(safe-area-inset-right,0px)) 72px max(24px,env(safe-area-inset-left,0px))}
+
+/* header */
+.top{display:flex;align-items:center;gap:14px 20px;padding-block:22px 18px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:19px;letter-spacing:-.02em}
+.logo i{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+.nav{display:flex;gap:2px;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
+.nav a{padding:6px 14px;border-radius:999px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:500}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(17,24,22,.1)}
+.status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);min-width:0}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:none;animation:beat 2.2s infinite}
+@keyframes beat{0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+.status span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spacer{flex:1}
+.search{position:relative}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none}
+.search input{width:300px;max-width:100%;border:1px solid var(--line);border-radius:999px;padding:9px 14px 9px 34px;background:var(--soft);outline:none;transition:border-color .15s,background .15s}
+.search input:focus{border-color:var(--green-line);background:#fff}
+.search input::placeholder{color:var(--faint)}
+.hits{font:400 12px var(--mono);color:var(--green-deep);white-space:nowrap}
+.tag{font:500 11px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 10px;white-space:nowrap}
+
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin:6px 0 12px;flex-wrap:wrap}
+.sec-head h1,.sec-head h2{margin:0;font-weight:600;letter-spacing:-.02em}
+.sec-head h1{font-size:24px}
+.sec-head h2{font-size:18px}
+.sec-head p{margin:2px 0 0;color:var(--muted);font-size:14px;max-width:72ch}
+.stats{display:flex;gap:18px;flex-wrap:wrap}
+.stat{font:400 12px var(--mono);color:var(--faint);white-space:nowrap}
+.stat b{font:600 15px var(--f);color:var(--ink);margin-right:4px;font-variant-numeric:tabular-nums}
+.stat.g b{color:var(--green-deep)}
+
+/* boards */
+.board{position:relative;overflow:hidden;background:var(--bg)}
+.board svg{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.board svg:active{cursor:grabbing}
+.combined{height:clamp(480px,64vh,740px);border:1px solid var(--line);border-radius:18px;
+  background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:22px 22px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.combined .legend{position:absolute;left:14px;bottom:14px;background:rgba(255,255,255,.94);padding:8px 12px;border-radius:12px;border:1px solid var(--line);max-width:calc(100% - 28px)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.lg{display:inline-block;flex:none}
+.lg.agent{width:13px;height:13px;border-radius:50%;background:var(--ink)}
+.lg.mem{width:22px;height:12px;border-radius:6px;border:1.4px solid var(--green);background:var(--green-soft)}
+.lg.topic{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.lg.wrote{width:20px;border-top:1.6px solid var(--ink)}
+.lg.recall{width:22px;border-top:1.8px dashed var(--green);position:relative}
+.lg.recall::after,.lg.to::after{content:"";position:absolute;right:-2px;top:-5px;border:4px solid transparent;border-left:6px solid var(--green)}
+.lg.to{width:20px;border-top:2px solid var(--green);position:relative}
+.lg.reply{width:10px;height:10px;border-radius:50%;background:var(--ink)}
+.lg.user{width:10px;height:10px;border-radius:50%;border:1.4px solid var(--faint);background:#fff}
+.lg.thought{width:8px;height:8px;border-radius:50%;border:1.4px dotted var(--muted);background:#fff}
+.lg.saved{width:10px;height:10px;border-radius:50%;background:var(--green)}
+.lg.recalled{width:12px;height:12px;border-radius:50%;border:1.6px solid var(--green);background:#fff}
+.hint{position:absolute;left:14px;top:14px;font:400 11px var(--mono);color:var(--faint);background:rgba(255,255,255,.9);padding:4px 8px;border-radius:8px}
+
+/* drawer: the full story of what was clicked */
+.drawer{position:fixed;top:16px;right:16px;bottom:16px;width:min(400px,calc(100vw - 32px));overflow:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 18px 50px rgba(17,24,22,.12);display:flex;flex-direction:column;gap:14px;z-index:20;animation:slidein .2s ease-out}
+@keyframes slidein{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.drawer .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--mono);padding:5px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.g{background:var(--green-soft);color:var(--green-deep)}
+.pill.warn{background:#FFF4E5;color:#8A5300}
+.mono-s{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:6px;background:var(--ink);color:#fff;font:600 10px var(--mono);flex:none}
+.drawer .x{margin-left:auto;background:none;border:0;color:var(--faint);font-size:20px;line-height:1;padding:2px 4px;cursor:pointer}
+.drawer .x:hover{color:var(--ink)}
+.drawer h3{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;line-height:1.35;text-wrap:balance}
+.sub{font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.from{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:8px}
+.from b{color:var(--ink);font-weight:500}
+.turn{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.turn.on{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.msg{font-size:13.5px;line-height:1.45;padding:8px 11px;border-radius:11px;max-width:92%}
+.msg.user{align-self:flex-end;background:var(--soft)}
+.msg.reply{align-self:flex-start;background:#fff;border:1px solid var(--line)}
+.msg small{display:block;font:400 10px var(--mono);color:var(--faint);margin-bottom:2px}
+.think{border-left:2px dotted var(--edge);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:5px}
+.think .lab{font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.think p{margin:0;font:400 12.5px/1.5 var(--mono);color:var(--muted)}
+.think p.on{color:var(--ink);background:var(--green-soft);border-radius:6px;padding:2px 6px;margin-left:-6px}
+.mchip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1.3 var(--f);padding:4px 9px;border-radius:999px;border:1.3px solid var(--green);color:var(--green-deep);background:#fff;max-width:100%}
+.mchip.out{background:var(--green-soft)}
+.mchip:hover{background:var(--green-soft)}
+.mchip .k{font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.04em}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.readers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.readers li{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.readers button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+.readers button:hover .who{text-decoration:underline;text-underline-offset:3px}
+.readers .who{display:flex;align-items:center;gap:8px;font-size:13px}
+.readers .who b{font-weight:500}
+.readers .th{font:400 12.5px/1.5 var(--mono);color:var(--ink);background:var(--green-soft);border-radius:8px;padding:6px 9px}
+.note-s{font-size:13px;color:var(--muted);margin:0}
+.btn{align-self:flex-start;background:var(--soft);color:var(--ink);border:0;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer}
+.btn:hover{background:var(--line)}
+
+/* agent cards */
+.agents{margin-top:40px}
+.agents .legend{margin:-4px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.card{border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);transition:border-color .2s,box-shadow .2s}
+.card.focus{border-color:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+.card-h{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mono{width:28px;height:28px;border-radius:9px;background:var(--ink);color:#fff;display:grid;place-items:center;font:600 13px var(--mono);flex:none}
+.card-h .nm{font-weight:600;line-height:1.2}
+.card-h .key{display:block;font:400 11.5px var(--mono);color:var(--faint)}
+.card-h .n{margin-left:auto;font:400 12px var(--mono);color:var(--muted);text-align:right;white-space:nowrap}
+.card .board{height:330px}
+.card-f{padding:10px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);min-height:46px;display:flex;align-items:center;gap:8px}
+.card-f b{color:var(--ink);font-weight:500}
+.card-f .t{font:400 11px var(--mono);color:var(--faint);flex:none}
+.card-f .f{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-f.sel{background:var(--green-soft);color:var(--green-deep)}
+
+/* svg */
+.link{stroke:var(--edge);stroke-width:1.2;fill:none}
+.link.t-WROTE{stroke:var(--ink);stroke-width:1.4;stroke-opacity:.55}
+.link.t-ABOUT{stroke:var(--line);stroke-width:1.2}
+.link.t-RECALLED{stroke:var(--green);stroke-width:1.8;stroke-dasharray:5 4}
+.link.t-TO{stroke:var(--green);stroke-width:2}
+.link.t-SUPERSEDES{stroke:var(--faint);stroke-width:1.4;stroke-dasharray:3 3}
+.link.t-THOUGHT,.link.t-NEXT,.link.t-LED_TO{stroke-dasharray:2 3}
+.link.t-SAVED,.link.t-RECALLED.small{stroke:var(--green);stroke-width:1.4;stroke-dasharray:none}
+.link.hl{stroke:var(--green);stroke-width:2.4;stroke-opacity:1}
+.node{cursor:pointer}
+.node.dim,.link.dim{opacity:.12}
+.node,.link{transition:opacity .25s}
+.s-agent{fill:var(--ink)}
+.mono-t{font:600 13px var(--mono);fill:#fff;pointer-events:none}
+.s-mem{fill:var(--soft);stroke:var(--edge);stroke-width:1.2}
+.s-mem.k-decision{fill:var(--green-soft);stroke:var(--green)}
+.s-mem.k-finding{fill:#fff;stroke:var(--green)}
+.s-mem.k-howto{fill:#fff;stroke:var(--ink);stroke-dasharray:3 2}
+.s-mem.k-handoff{fill:#fff;stroke:var(--green);stroke-width:1.6}
+.mem-t{font:500 11.5px var(--f);fill:var(--ink);pointer-events:none}
+.k-decision ~ .mem-t{fill:var(--green-deep)}
+.node.superseded{opacity:.42}
+.node.superseded .mem-t{text-decoration:line-through}
+.s-count{fill:var(--green)}
+.count-t{font:600 10px var(--mono);fill:#fff;pointer-events:none}
+.s-topic{fill:var(--green)}
+.topic-t{font:500 11px var(--mono);fill:var(--green-deep);paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.n-label{font:500 11.5px var(--f);fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.s-sess{fill:#fff;stroke:var(--ink);stroke-width:1.6}
+.s-reply{fill:var(--ink)}
+.s-user{fill:#fff;stroke:var(--faint);stroke-width:1.4}
+.s-thought{fill:#fff;stroke:var(--muted);stroke-width:1.3;stroke-dasharray:1.5 1.5}
+.s-saved{fill:var(--green)}
+.s-recalled{fill:#fff;stroke:var(--green);stroke-width:1.8}
+.ref-l{font:600 8.5px var(--mono);fill:var(--green-deep);pointer-events:none}
+.ref-t{font:500 10px var(--f);fill:var(--green-deep);paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.sess-t{font:600 10.5px var(--f);fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.sel-ring{fill:none;stroke:var(--green);stroke-width:2.5;pointer-events:none}
+.pulse{fill:none;stroke:var(--green);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:pulse 1.3s ease-out 2;pointer-events:none}
+@keyframes pulse{from{transform:scale(1);opacity:.9}to{transform:scale(2.6);opacity:0}}
+.tip{position:absolute;z-index:30;max-width:320px;background:var(--ink);color:#fff;border-radius:10px;padding:8px 10px;font-size:12.5px;line-height:1.45;pointer-events:none}
+.tip small{display:block;font:400 10.5px var(--mono);color:#B7C2BC;margin-bottom:2px}
+.nolib{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);text-align:center;padding:24px}
+footer.note{margin-top:28px;font-size:12.5px;color:var(--faint)}
+
+@media (max-width:1180px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:680px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .search,.search input{width:100%}
+  .search{flex:1 1 100%}
+  .combined{height:auto}
+  .combined svg{height:440px}
+  .combined .legend{position:static;margin:10px;max-width:none}
+  .hint{display:none}
+  .drawer{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:70vh}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo"><i></i>Hivemind</div>
+    <nav class="nav" aria-label="Pages"><a href="./" aria-current="page">Graph</a><a href="rooms.html">Rooms</a></nav>
+    <div class="status" aria-live="polite"><span class="dot"></span><span id="status">Loading graph data…</span></div>
+    <div class="spacer"></div>
+    <span class="hits" id="hits"></span>
+    <label class="search" for="q">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="#9AA7A0" stroke-width="1.6"/><path d="m11 11 3.5 3.5" stroke="#9AA7A0" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="Search chat, thinking and memory" autocomplete="off" aria-label="Search chat, thinking and memory">
+    </label>
+    <span class="tag" id="src-tag">sample data</span>
+  </header>
+
+  <section id="explorer" aria-label="Explore agent knowledge"></section>
+
+  <details aria-labelledby="h-combined-summary">
+    <summary class="sec-head"><h2 id="h-combined-summary">2D memory overview</h2></summary>
+    <section>
+    <div class="sec-head">
+      <div><h1 id="h-combined">Combined graph</h1><p>The shared memory: what each agent learned, and which other agents’ thinking used it.</p></div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="board combined">
+      <svg id="svg-common" aria-label="Combined memory graph. Click a memory, an agent or a topic."></svg>
+      <div class="legend">
+        <span><i class="lg agent"></i>agent</span>
+        <span><i class="lg mem"></i>memory</span>
+        <span><i class="lg topic"></i>topic</span>
+        <span><i class="lg wrote"></i>wrote</span>
+        <span><i class="lg recall"></i>recalled by another agent</span>
+        <span><i class="lg to"></i>handoff to</span>
+      </div>
+      <div class="hint">drag to move · ctrl + scroll to zoom</div>
+    </div>
+    </section>
+  </details>
+
+  <section class="agents" id="agents" aria-labelledby="h-agents">
+    <div class="sec-head">
+      <div><h2 id="h-agents">Agent graphs</h2><p>Each agent’s own chat and thinking. Today these stay locked inside each agent; Hivemind reads them from its logs.</p></div>
+    </div>
+    <div class="legend">
+      <span><i class="lg user"></i>your message</span>
+      <span><i class="lg thought"></i>thought</span>
+      <span><i class="lg reply"></i>agent reply</span>
+      <span><i class="lg saved"></i>saved to memory</span>
+      <span><i class="lg recalled"></i>recalled from another agent</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer class="note" id="footer-note">Loading graph data…</footer>
+</div>
+<aside class="drawer" id="drawer" aria-live="polite" hidden></aside>
+<div class="tip" id="tip" hidden></div>
+
+<script src="data.js"></script>
+<script src="api.js"></script>
+<script src="chat-graph.js"></script>
+<script src="explorer.js?v=20261018-readable4"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+window.HM_READY.then(() => {
+'use strict';
+const SOURCE = window.HM_SOURCE;            // live | empty | offline | sample
+const IS_LIVE = SOURCE === 'live' || SOURCE === 'empty';
+const SOURCE_STATUS = { sample: 'Demo · sample data', offline: 'API unavailable · showing sample data', live: 'FalkorDB · loaded data', empty: 'FalkorDB · no data yet' }[SOURCE] || 'Sample data';
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, r = document) => r.querySelector(s);
+$('#status').textContent = SOURCE_STATUS;
+$('#footer-note').textContent = `${SOURCE === 'live' || SOURCE === 'empty' ? 'Loaded from FalkorDB. ' : SOURCE === 'offline' ? 'API unavailable; showing sample data. ' : 'Demo uses sample data. '}Click a memory, a session or a thought to follow it across every graph. Esc clears.`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lid = x => (x && typeof x === 'object') ? x.id : x;
+const trunc = (s, n) => (s = String(s ?? ''), s.length > n ? s.slice(0, n - 1) + '…' : s);
+const plural = (n, w, ws) => `${n} ${n === 1 ? w : (ws || w + 's')}`;
+
+/* ---------------- shared sample data (web/data.js) ---------------- */
+const { AG, FID, KIND, MEMS, LOGS } = window.HM;
+const AGENT_KEYS = Object.keys(AG);
+const HM_EXPLORER = window.HMChatGraph && window.HMExplorer ? window.HMExplorer.mount($('#explorer'), window.HMChatGraph.fromState(window.HM)) : null;
+function refreshExplorerWorkspace() { if (HM_EXPLORER && window.HMChatGraph) HM_EXPLORER.updateWorkspace(window.HMChatGraph.fromState(window.HM)); }
+function recordExplorerTurn(agent, sid, turn) { const sessions = window.HM.LOGS[agent] || (window.HM.LOGS[agent] = []); let session = sessions.find(s => s.id === sid); if (!session) { session = { id: sid, title: 'Live room', turns: [] }; sessions.push(session); } session.turns.push(turn); refreshExplorerWorkspace(); }
+const GK = ['common', ...AGENT_KEYS];
+const GKEY = k => k === 'common' ? 'common' : 'agent__' + k;
+
+/* ---------------- graph store ---------------- */
+const store = {};
+GK.forEach(k => store[k] = { nodes: [], links: [], idx: new Map() });
+function N(gk, n) { const g = store[gk]; if (g.idx.has(n.id)) return g.idx.get(n.id); n.graph = gk; g.nodes.push(n); g.idx.set(n.id, n); return n; }
+function L(gk, s, t, type) {
+  const g = store[gk], id = s + '>' + t + ':' + type;
+  let l = g.links.find(x => x.id === id);
+  if (!l) { l = { id, source: s, target: t, type, fresh: true }; g.links.push(l); }
+  return l;
+}
+// keyed per agent: a room gives every agent a session with the same id
+const turnCount = {}, lastReply = {}, skey = (gk, sid) => gk + '|' + sid;
+
+/* agent graph: Session → your message → thought → thought → reply; thoughts recall memories, replies save them */
+function addSession(gk, sid, title) { N(gk, { id: sid, type: 'Session', label: title, session: sid, fresh: true }); turnCount[skey(gk, sid)] = 0; }
+function ref(gk, mem, dir) {
+  return N(gk, { id: `${gk}:${dir}:${mem}`, type: 'MemRef', dir, mem, label: MEMS[mem].short, fresh: true }).id;
+}
+function addTurn(gk, sid, turn) {
+  const i = turnCount[skey(gk, sid)]++, tid = `${sid}#${i}`;
+  const u = N(gk, { id: tid + ':u', type: 'Message', role: 'user', text: turn.user, session: sid, turn: tid, fresh: true });
+  L(gk, sid, u.id, 'HAS');
+  if (lastReply[skey(gk, sid)]) L(gk, lastReply[skey(gk, sid)], u.id, 'NEXT');
+  let prev = u.id;
+  (turn.think || []).forEach((th, j) => {
+    const t = N(gk, { id: tid + ':t' + j, type: 'Thought', text: th.t, fidelity: FID[gk], session: sid, turn: tid, fresh: true });
+    L(gk, prev, t.id, j === 0 ? 'THOUGHT' : 'NEXT');
+    prev = t.id;
+    (th.recall || []).forEach(m => L(gk, t.id, ref(gk, m, 'in'), 'RECALLED'));
+  });
+  const r = N(gk, { id: tid + ':r', type: 'Message', role: 'assistant', text: turn.reply, session: sid, turn: tid, fresh: true });
+  L(gk, prev, r.id, (turn.think || []).length ? 'LED_TO' : 'NEXT');
+  (turn.save || []).forEach(m => L(gk, r.id, ref(gk, m, 'out'), 'SAVED'));
+  lastReply[skey(gk, sid)] = r.id;
+  return tid;
+}
+Object.entries(LOGS).forEach(([gk, sessions]) => sessions.forEach(s => { addSession(gk, s.id, s.title); s.turns.forEach(t => addTurn(gk, s.id, t)); }));
+
+/* combined graph, derived from the agent graphs: Agent —wrote→ Memory —recalled→ Agent */
+function derive() {
+  const fresh = new Set();
+  AGENT_KEYS.forEach(a => N('common', { id: 'A:' + a, type: 'Agent', agent: a, label: AG[a].name }));
+  const addMemory = (mid, m, agent, src) => {
+    const id = 'M:' + mid;
+    if (store.common.idx.has(id) || !store['common'] || !AG[agent]) return;
+    N('common', { id, type: 'Memory', mem: mid, kind: m.kind, short: m.short || trunc(m.text, 28), text: m.text, agent, src, fresh: true });
+    fresh.add(id);
+    L('common', 'A:' + agent, id, 'WROTE');
+    (m.topics || []).forEach(t => { N('common', { id: 'T:' + t, type: 'Topic', label: t, fresh: true }); L('common', id, 'T:' + t, 'ABOUT'); });
+    if (m.to && AG[m.to]) L('common', id, 'A:' + m.to, 'TO');
+    if (m.supersedes && store.common.idx.has('M:' + m.supersedes)) { L('common', id, 'M:' + m.supersedes, 'SUPERSEDES'); store.common.idx.get('M:' + m.supersedes).superseded = id; }
+  };
+  // pass 1: memories, from SAVED edges (the reply they came from)
+  AGENT_KEYS.forEach(a => store[a].links.forEach(l => {
+    if (l.type !== 'SAVED') return;
+    const reply = store[a].idx.get(lid(l.source)), r = store[a].idx.get(lid(l.target));
+    if (MEMS[r.mem]) addMemory(r.mem, MEMS[r.mem], a, { graph: a, session: reply.session, turn: reply.turn });
+  }));
+  // pass 1b (live data): memories with no saved-from chat, made with remember() or by a room
+  if (IS_LIVE) Object.entries(MEMS).forEach(([mid, m]) => addMemory(mid, m, m.by, null));
+  // pass 2: which thoughts recalled which memory
+  AGENT_KEYS.forEach(a => store[a].links.forEach(l => {
+    if (l.type !== 'RECALLED') return;
+    const th = store[a].idx.get(lid(l.source)), r = store[a].idx.get(lid(l.target)), id = 'M:' + r.mem;
+    const mem = store.common.idx.get(id);
+    if (!mem || mem.agent === a) return;
+    const link = L('common', id, 'A:' + a, 'RECALLED');
+    link.by = link.by || new Set();
+    if (!link.by.has(th.id)) { link.by.add(th.id); fresh.add(id); }
+  }));
+  return fresh;
+}
+derive();
+GK.forEach(k => { store[k].nodes.forEach(n => { n.fresh = false; }); store[k].links.forEach(l => { l.fresh = false; }); });
+
+const readersOf = memId => store.common.links.filter(l => l.type === 'RECALLED' && lid(l.source) === memId);
+
+/* ---------------- drawing ---------------- */
+const memText = d => KIND[d.kind].g + '  ' + d.short;
+const memWidth = d => Math.round(memText(d).length * 6.3 + 40);
+function footprint(d, big) {
+  if (big) {
+    if (d.type === 'Memory') return memWidth(d) / 2 + 6;
+    if (d.type === 'Agent') return 36;
+    if (d.type === 'Topic') return 10 + d.label.length * 3.4;
+    return 12;
+  }
+  switch (d.type) {
+    case 'Session': return 10 + Math.min(d.label.length, 24) * 3;
+    case 'MemRef': return 10 + Math.min(d.label.length, 22) * 2.6;
+    case 'Message': return 7; case 'Thought': return 5; default: return 8;
+  }
+}
+const DIST = {
+  big: { WROTE: 105, ABOUT: 72, RECALLED: 190, TO: 170, SUPERSEDES: 90 },
+  small: { HAS: 34, NEXT: 18, THOUGHT: 18, LED_TO: 18, RECALLED: 30, SAVED: 30 },
+};
+const STRENGTH = { RECALLED: 0.08, TO: 0.1, SUPERSEDES: 0.4 };
+const CORNER = { 'claude-code': [-380, -190], 'codex': [380, -190], 'gemini': [380, 190], 'antigravity': [-380, 190] };
+function shape(g, d, big) {
+  switch (d.type) {
+    case 'Agent':
+      g.append('circle').attr('class', 'shape s-agent').attr('r', 22);
+      g.append('text').attr('class', 'mono-t').attr('text-anchor', 'middle').attr('dy', '.36em').text(AG[d.agent].mono);
+      g.append('text').attr('class', 'n-label').attr('text-anchor', 'middle').attr('y', 40).text(AG[d.agent].name);
+      break;
+    case 'Memory': {
+      const w = memWidth(d);
+      g.append('rect').attr('class', 'shape s-mem k-' + d.kind).attr('x', -w / 2).attr('y', -13).attr('width', w).attr('height', 26).attr('rx', 13);
+      g.append('text').attr('class', 'mem-t').attr('x', -w / 2 + 12).attr('dy', '.35em').text(memText(d));
+      const c = g.append('g').attr('class', 'count').attr('transform', `translate(${w / 2 - 14},0)`);
+      c.append('circle').attr('class', 's-count').attr('r', 8);
+      c.append('text').attr('class', 'count-t').attr('text-anchor', 'middle').attr('dy', '.35em');
+      break;
+    }
+    case 'Topic':
+      g.append('circle').attr('class', 'shape s-topic').attr('r', 5);
+      g.append('text').attr('class', 'topic-t').attr('x', 9).attr('dy', '.35em').text(d.label);
+      break;
+    case 'Session':
+      g.append('circle').attr('class', 'shape s-sess').attr('r', 7);
+      g.append('text').attr('class', 'sess-t').attr('x', 11).attr('dy', '.35em').text(trunc(d.label, 24));
+      break;
+    case 'Message':
+      g.append('circle').attr('class', 'shape ' + (d.role === 'user' ? 's-user' : 's-reply')).attr('r', d.role === 'user' ? 4.5 : 5);
+      break;
+    case 'Thought':
+      g.append('circle').attr('class', 'shape s-thought').attr('r', 3.5);
+      break;
+    case 'MemRef':
+      if (d.dir === 'out') g.append('circle').attr('class', 'shape s-saved').attr('r', 5);
+      else {
+        g.append('circle').attr('class', 'shape s-recalled').attr('r', 7);
+        g.append('text').attr('class', 'ref-l').attr('text-anchor', 'middle').attr('dy', '.36em').text(AG[writerOf(d.mem)]?.mono || '');
+      }
+      g.append('text').attr('class', 'ref-t').attr('x', d.dir === 'out' ? 9 : 11).attr('dy', '.35em').text(trunc(d.label, 22));
+      break;
+  }
+}
+function writerOf(mem) { const m = store.common.idx.get('M:' + mem); return m ? m.agent : null; }
+
+const tip = $('#tip');
+function tipText(d) {
+  switch (d.type) {
+    case 'Agent': return ['agent', AG[d.agent].name];
+    case 'Memory': return [`${KIND[d.kind].t} · written by ${AG[d.agent].name}`, d.text];
+    case 'Topic': return ['topic', d.label];
+    case 'Session': return [`${AG[d.graph].name} · chat session`, d.label];
+    case 'Message': return [d.role === 'user' ? 'your message' : `${AG[d.graph].name} reply`, d.text];
+    case 'Thought': return [`thought · ${d.fidelity}`, d.text];
+    case 'MemRef': return d.dir === 'out' ? ['saved to shared memory', MEMS[d.mem].text] : [`recalled from ${AG[writerOf(d.mem)]?.name || 'memory'}`, MEMS[d.mem].text];
+  }
+  return [d.type, d.label || ''];
+}
+function showTip(ev, d) { const [h, b] = tipText(d); tip.innerHTML = `<small>${esc(h)}</small>${esc(trunc(b, 180))}`; tip.hidden = false; moveTip(ev); }
+function moveTip(ev) { let x = ev.clientX + 14; if (x + 320 > innerWidth) x = ev.clientX - 320; tip.style.left = x + 'px'; tip.style.top = (ev.clientY + 14 + scrollY) + 'px'; }
+function hideTip() { tip.hidden = true; }
+
+function halfSize(d) { // for stopping arrows at the edge of the target
+  if (d.type === 'Agent') return { r: 25 };
+  if (d.type === 'Memory') return { hw: memWidth(d) / 2 + 2, hh: 15 };
+  return { r: 8 };
+}
+
+class GraphView {
+  constructor(svgEl, gk, big) {
+    this.el = svgEl; this.gk = gk; this.big = big; this.fitted = false;
+    this.svg = d3.select(svgEl);
+    this.svg.append('defs').html(
+      `<marker id="ag-${gk}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#16A34A"/></marker>` +
+      `<marker id="ai-${gk}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#9AA7A0"/></marker>`);
+    this.root = this.svg.append('g');
+    this.linkG = this.root.append('g'); this.nodeG = this.root.append('g');
+    this.zoom = d3.zoom().scaleExtent([0.35, 3])
+      .filter(e => e.type === 'wheel' ? (e.ctrlKey || e.metaKey) : !e.button)
+      .on('zoom', e => { this.root.attr('transform', e.transform); if (e.sourceEvent) this.userMoved = true; });
+    this.svg.call(this.zoom).on('dblclick.zoom', null).on('click', () => clearFocus());
+    const D = big ? DIST.big : DIST.small;
+    this.sim = d3.forceSimulation()
+      .force('link', d3.forceLink().id(d => d.id).distance(l => D[l.type] || 30).strength(l => big ? (STRENGTH[l.type] ?? 0.45) : 0.7))
+      .force('charge', d3.forceManyBody().strength(big ? -620 : -85))
+      // big graph: each agent anchored to its own corner, memories settle between writer and readers
+      .force('x', d3.forceX(d => big && d.type === 'Agent' ? CORNER[d.agent][0] : 0).strength(d => big && d.type === 'Agent' ? 0.6 : big ? 0.03 : 0.06))
+      .force('y', d3.forceY(d => big && d.type === 'Agent' ? CORNER[d.agent][1] : 0).strength(d => big && d.type === 'Agent' ? 0.6 : big ? 0.06 : 0.1))
+      .force('collide', d3.forceCollide(d => footprint(d, big) + (big ? 8 : 3)).iterations(3))
+      .on('tick', () => this.tick());
+    new ResizeObserver(() => this.resize()).observe(svgEl);
+    this.resize();
+    this.draw(true);
+  }
+  resize() {
+    const w = this.el.clientWidth || 600, h = this.el.clientHeight || 300;
+    this.svg.attr('viewBox', [-w / 2, -h / 2, w, h]);
+    this.w = w; this.h = h;
+    if (this.fitted) this.fit(false);
+  }
+  place(g) {
+    g.nodes.forEach(n => {
+      if (n.x !== undefined) return;
+      const l = g.links.find(l => lid(l.source) === n.id || lid(l.target) === n.id);
+      const o = l && g.idx.get(lid(l.source) === n.id ? lid(l.target) : lid(l.source));
+      if (o && o.x !== undefined) { n.x = o.x + (Math.random() - .5) * 40; n.y = o.y + (Math.random() - .5) * 40; }
+    });
+  }
+  draw(first) {
+    const g = store[this.gk], big = this.big, gk = this.gk;
+    this.place(g);
+    this.sim.force('link').links([]);
+    this.sim.nodes(g.nodes);
+    this.sim.force('link').links(g.links);
+    if (first) { this.sim.alpha(1); for (let i = 0; i < 320; i++) this.sim.tick(); this.sim.alpha(0.02).restart(); }
+    else this.sim.alpha(0.35).restart();
+    this.links = this.linkG.selectAll('line').data(g.links, d => d.id).join('line')
+      .attr('class', d => `link t-${d.type}${big ? '' : ' small'}`)
+      .attr('marker-end', d => !big ? null : (d.type === 'RECALLED' || d.type === 'TO') ? `url(#ag-${gk})` : d.type === 'SUPERSEDES' ? `url(#ai-${gk})` : null);
+    this.nodes = this.nodeG.selectAll('g.node').data(g.nodes, d => d.id).join(enter => {
+      const e = enter.append('g').attr('class', 'node').attr('tabindex', 0).attr('role', 'button')
+        .attr('aria-label', d => { const [h, b] = tipText(d); return h + ': ' + b; });
+      e.each(function (d) { shape(d3.select(this), d, big); });
+      e.on('click', (ev, d) => { ev.stopPropagation(); focusNode(d); })
+       .on('keydown', (ev, d) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); focusNode(d); } })
+       .on('mouseenter', showTip).on('mousemove', moveTip).on('mouseleave', hideTip)
+       .call(d3.drag()
+         .on('start', (ev, d) => { if (!ev.active) this.sim.alphaTarget(0.2).restart(); d.fx = d.x; d.fy = d.y; })
+         .on('drag', (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+         .on('end', (ev, d) => { if (!ev.active) this.sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+      return e;
+    });
+    const self = this;
+    this.nodes.each(function (d) { if (d.fresh) { d.fresh = false; self.pulseEl(d3.select(this), d); } });
+    if (big) this.refreshMemories();
+    this.tick();
+    if (first) { this.fit(false); this.fitted = true; }
+    else if (!this.userMoved) setTimeout(() => this.fit(true), 1200); // keep new nodes in view unless the user panned or zoomed
+    this.apply();
+  }
+  refreshMemories() { // recall counts and superseded state change as agents work
+    this.nodes.filter(d => d.type === 'Memory').each(function (d) {
+      const n = new Set(readersOf(d.id).map(l => lid(l.target))).size, s = d3.select(this);
+      s.select('.count').attr('display', n ? null : 'none');
+      s.select('.count-t').text(n);
+      s.classed('superseded', !!d.superseded);
+    });
+  }
+  tick() {
+    if (!this.links) return;
+    const big = this.big;
+    this.links.each(function (d) {
+      let x2 = d.target.x, y2 = d.target.y;
+      if (big && (d.type === 'RECALLED' || d.type === 'TO' || d.type === 'SUPERSEDES')) {
+        const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y, hs = halfSize(d.target);
+        let t;
+        if (hs.r) t = hs.r / (Math.hypot(dx, dy) || 1);
+        else t = Math.min(dx ? hs.hw / Math.abs(dx) : Infinity, dy ? hs.hh / Math.abs(dy) : Infinity);
+        t = Math.min(t, 1);
+        x2 -= dx * t; y2 -= dy * t;
+      }
+      this.setAttribute('x1', d.source.x); this.setAttribute('y1', d.source.y);
+      this.setAttribute('x2', x2); this.setAttribute('y2', y2);
+    });
+    this.nodes.attr('transform', d => `translate(${d.x},${d.y})`);
+  }
+  fit(animate) {
+    const ns = store[this.gk].nodes;
+    if (!ns.length) return;
+    const padX = this.big ? 110 : 100, padY = this.big ? 50 : 26, legendRoom = this.big ? 64 : 0;
+    const xs = ns.map(n => n.x), ys = ns.map(n => n.y);
+    const x0 = Math.min(...xs) - padX, x1 = Math.max(...xs) + padX, y0 = Math.min(...ys) - padY, y1 = Math.max(...ys) + padY + legendRoom;
+    const k = Math.min(this.w / (x1 - x0), this.h / (y1 - y0), this.big ? 1.3 : 1.15);
+    const t = d3.zoomIdentity.scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+    (animate && !REDUCED ? this.svg.transition().duration(600) : this.svg).call(this.zoom.transform, t);
+  }
+  pulseEl(sel, d) {
+    if (REDUCED) return;
+    const r = d.type === 'Memory' ? 18 : d.type === 'Agent' ? 26 : 9;
+    sel.append('circle').attr('class', 'pulse').attr('r', r).on('animationend', function () { this.remove(); });
+  }
+  pulse(id) { const self = this; this.nodes.filter(d => d.id === id).each(function (d) { self.pulseEl(d3.select(this), d); }); }
+  mark(nodes, links, selIds) { this.hlN = nodes; this.hlL = links; this.selIds = selIds || []; this.apply(); }
+  apply() {
+    if (!this.nodes) return;
+    const Nn = this.hlN, Lk = this.hlL, sel = new Set(this.selIds || []);
+    this.nodes.classed('dim', d => Nn ? !Nn.has(d.id) : false);
+    this.links.classed('dim', d => Nn ? !(Lk && Lk.has(d.id)) : false).classed('hl', d => !!(Lk && Lk.has(d.id)));
+    this.nodes.selectAll('.sel-ring').remove();
+    this.nodes.filter(d => sel.has(d.id)).each(function (d) {
+      const s = d3.select(this);
+      if (d.type === 'Memory') { const w = memWidth(d) + 10; s.insert('rect', ':first-child').attr('class', 'sel-ring').attr('x', -w / 2).attr('y', -18).attr('width', w).attr('height', 36).attr('rx', 18); }
+      else s.insert('circle', ':first-child').attr('class', 'sel-ring').attr('r', d.type === 'Agent' ? 28 : 10);
+    });
+  }
+}
+
+/* ---------------- page ---------------- */
+$('#grid').innerHTML = AGENT_KEYS.map(k => `
+  <article class="card" id="card-${k}" aria-labelledby="nm-${k}">
+    <div class="card-h"><span class="mono">${AG[k].mono}</span>
+      <div title="${GKEY(k)}"><div class="nm" id="nm-${k}">${AG[k].name}</div><span class="key">thinking: ${FID[k]}</span></div>
+      <span class="n" id="n-${k}"></span><button class="expand" data-expand="${k}" aria-label="Open ${AG[k].name}'s graph full size" title="Open full size">⤢</button></div>
+    <div class="board"><svg id="svg-${k}" aria-label="${AG[k].name}: chat and thinking"></svg></div>
+    <div class="card-f" id="f-${k}"></div>
+  </article>`).join('');
+
+const HAS_D3 = typeof window.d3 !== 'undefined';
+const views = {};
+if (HAS_D3) {
+  views.common = new GraphView($('#svg-common'), 'common', true);
+  AGENT_KEYS.forEach(k => views[k] = new GraphView($('#svg-' + k), k, false));
+} else {
+  GK.forEach(k => { const s = $('#svg-' + k); s.hidden = true; s.parentElement.insertAdjacentHTML('beforeend', '<p class="nolib">The graph library didn’t load. Check the internet connection and reload.</p>'); });
+}
+
+let clock = 10 * 60 + 32;
+const now = () => String(Math.floor(clock / 60)).padStart(2, '0') + ':' + String(clock % 60).padStart(2, '0');
+const lastAct = IS_LIVE
+  ? Object.fromEntries(AGENT_KEYS.map(k => { const s = (LOGS[k] || [])[0]; return [k, ['', s ? `last chat: <b>${esc(trunc(s.title, 40))}</b>` : 'no chats read yet']]; }))
+  : {
+    'claude-code': ['10:24', 'saved a <b>decision</b>'],
+    'codex': ['10:12', 'saved a <b>finding</b>'],
+    'gemini': ['10:31', 'recalled an <b>Antigravity fact</b>'],
+    'antigravity': ['10:15', 'picked up a <b>handoff</b>'],
+  };
+function counts() {
+  const c = store.common;
+  const mems = c.nodes.filter(n => n.type === 'Memory').length;
+  const recalls = c.links.filter(l => l.type === 'RECALLED').reduce((s, l) => s + l.by.size, 0);
+  const topics = c.nodes.filter(n => n.type === 'Topic').length;
+  const ho = c.nodes.filter(n => n.type === 'Memory' && n.kind === 'handoff').length;
+  $('#stats').innerHTML = `<span class="stat"><b>${mems}</b>memories</span><span class="stat g"><b>${recalls}</b>recalled by another agent</span><span class="stat"><b>${topics}</b>topics</span><span class="stat"><b>${ho}</b>handoffs</span>`;
+  AGENT_KEYS.forEach(k => {
+    const g = store[k];
+    $('#n-' + k).textContent = `${plural(g.nodes.filter(n => n.type === 'Session').length, 'chat')} · ${plural(g.nodes.filter(n => n.type === 'Thought').length, 'thought')}`;
+  });
+}
+function footer(k, html) {
+  const f = $('#f-' + k);
+  f.classList.toggle('sel', !!html);
+  f.innerHTML = html || `<span class="t">${lastAct[k][0]}</span><span class="f">${lastAct[k][1]}</span>`;
+}
+AGENT_KEYS.forEach(k => footer(k));
+counts();
+
+/* ---------------- focus: follow memory, chat and thinking across graphs ---------------- */
+const drawer = $('#drawer');
+const sel = () => ({ nodes: new Set(), links: new Set() });
+function turnSel(a, turn, s) { // one turn: your message, the thoughts, the reply, and memory links
+  const g = store[a], ids = new Set(g.nodes.filter(n => n.turn === turn).map(n => n.id));
+  ids.forEach(i => s.nodes.add(i));
+  g.links.forEach(l => {
+    const so = lid(l.source), ta = lid(l.target);
+    if (ids.has(so) && (ids.has(ta) || l.type === 'RECALLED' || l.type === 'SAVED')) { s.links.add(l.id); s.nodes.add(ta); }
+    if (ids.has(ta) && l.type === 'HAS') { s.links.add(l.id); s.nodes.add(so); }
+  });
+}
+function commonAround(id, s, types) {
+  s.nodes.add(id);
+  store.common.links.forEach(l => {
+    const so = lid(l.source), ta = lid(l.target);
+    if ((so === id || ta === id) && (!types || types.includes(l.type))) { s.links.add(l.id); s.nodes.add(so); s.nodes.add(ta); }
+  });
+}
+function focusCards(list) { AGENT_KEYS.forEach(a => $('#card-' + a).classList.toggle('focus', list.includes(a))); }
+function clearFocus() {
+  Object.values(views).forEach(v => v.mark(null, null, []));
+  drawer.hidden = true; focusCards([]);
+  AGENT_KEYS.forEach(k => footer(k));
+}
+function focusNode(d) {
+  hideTip();
+  if (!HAS_D3) return;
+  if (d.type === 'Memory') return focusMemory(d.mem);
+  if (d.type === 'MemRef') return focusMemory(d.mem);
+  if (d.type === 'Agent') return focusAgent(d.agent);
+  if (d.type === 'Topic') return focusTopic(d.id);
+  if (d.type === 'Session') return focusSession(d.graph, d.id);
+  if (d.turn) return focusTurn(d.graph, d.turn, d.id);
+}
+function applyAgents(per, selIds) {
+  const lit = [];
+  AGENT_KEYS.forEach(a => {
+    const s = per[a];
+    if (s && s.nodes.size) { views[a].mark(s.nodes, s.links, selIds[a] || []); lit.push(a); }
+    else views[a].mark(new Set(), new Set(), []);
+  });
+  focusCards(lit);
+  return lit;
+}
+function focusMemory(mem) {
+  const id = 'M:' + mem, m = store.common.idx.get(id);
+  if (!m) return;
+  const c = sel(); commonAround(id, c);
+  views.common.mark(c.nodes, c.links, [id]); views.common.pulse(id);
+  const per = {}, selIds = {};
+  per[m.agent] = sel(); selIds[m.agent] = [`${m.agent}:out:${mem}`];
+  if (m.src) turnSel(m.agent, m.src.turn, per[m.agent]);
+  readersOf(id).forEach(l => {
+    const a = lid(l.target).slice(2);
+    per[a] = per[a] || sel(); selIds[a] = selIds[a] || [];
+    l.by.forEach(th => { turnSel(a, store[a].idx.get(th).turn, per[a]); selIds[a].push(th); views[a].pulse(th); });
+  });
+  applyAgents(per, selIds);
+  AGENT_KEYS.forEach(a => footer(a, a === m.agent ? `<span class="f">wrote <b>${esc(m.short)}</b></span>` : per[a] ? `<span class="f">recalled <b>${esc(m.short)}</b> while thinking</span>` : null));
+  showMemory(m);
+}
+function focusAgent(a) {
+  const c = sel();
+  store.common.links.forEach(l => {
+    if ((l.type === 'WROTE' && lid(l.source) === 'A:' + a) || (l.type === 'RECALLED' && lid(l.target) === 'A:' + a)) { c.links.add(l.id); c.nodes.add(lid(l.source)); c.nodes.add(lid(l.target)); }
+  });
+  views.common.mark(c.nodes, c.links, ['A:' + a]);
+  const per = { [a]: null };
+  AGENT_KEYS.forEach(k => views[k].mark(k === a ? null : new Set(), null, []));
+  focusCards([a]); drawer.hidden = true;
+  const wrote = store.common.links.filter(l => l.type === 'WROTE' && lid(l.source) === 'A:' + a).length;
+  const used = store.common.links.filter(l => l.type === 'RECALLED' && lid(l.target) === 'A:' + a).length;
+  footer(a, `<span class="f">wrote <b>${plural(wrote, 'memory', 'memories')}</b>, used <b>${used}</b> from other agents</span>`);
+  return per;
+}
+function focusTopic(tid) {
+  const c = sel(); commonAround(tid, c, ['ABOUT']);
+  const mems = [...c.nodes].filter(i => i.startsWith('M:'));
+  mems.forEach(i => commonAround(i, c, ['WROTE', 'RECALLED', 'TO']));
+  views.common.mark(c.nodes, c.links, [tid]);
+  const per = {}, selIds = {};
+  mems.forEach(i => {
+    const m = store.common.idx.get(i);
+    (per[m.agent] ||= sel()); if (m.src) turnSel(m.agent, m.src.turn, per[m.agent]);
+    readersOf(i).forEach(l => { const a = lid(l.target).slice(2); (per[a] ||= sel()); l.by.forEach(th => turnSel(a, store[a].idx.get(th).turn, per[a])); });
+  });
+  applyAgents(per, selIds);
+  AGENT_KEYS.forEach(k => footer(k));
+  drawer.hidden = true;
+}
+function memsInTurns(a, turns) { // memories saved or recalled in these turns
+  const g = store[a], out = new Set();
+  g.links.forEach(l => {
+    if (l.type !== 'SAVED' && l.type !== 'RECALLED') return;
+    const n = g.idx.get(lid(l.source));
+    if (turns.has(n.turn)) out.add('M:' + g.idx.get(lid(l.target)).mem);
+  });
+  return [...out].filter(i => store.common.idx.has(i));
+}
+function markCommonFor(a, memIds) {
+  const c = sel();
+  memIds.forEach(i => {
+    c.nodes.add(i);
+    store.common.links.forEach(l => {
+      const so = lid(l.source), ta = lid(l.target);
+      if (so !== i) return;
+      if (l.type === 'RECALLED' && ta !== 'A:' + a) return;
+      if (l.type === 'WROTE' || l.type === 'RECALLED' || l.type === 'TO') { c.links.add(l.id); c.nodes.add(ta); }
+    });
+    store.common.links.forEach(l => { if (l.type === 'WROTE' && lid(l.target) === i) { c.links.add(l.id); c.nodes.add(lid(l.source)); } });
+  });
+  c.nodes.add('A:' + a);
+  views.common.mark(c.nodes, c.links, memIds);
+  memIds.forEach(i => views.common.pulse(i));
+}
+function focusTurn(a, turn, picked) {
+  const s = sel(); turnSel(a, turn, s);
+  applyAgents({ [a]: s }, { [a]: [picked] });
+  markCommonFor(a, memsInTurns(a, new Set([turn])));
+  AGENT_KEYS.forEach(k => footer(k));
+  const p = store[a].idx.get(picked);
+  footer(a, `<span class="f">${p.type === 'Thought' ? 'thought: ' : p.role === 'user' ? 'you: ' : 'reply: '}${esc(trunc(p.text, 80))}</span>`);
+  showSession(a, store[a].idx.get(turn.split('#')[0]).id, turn, picked);
+}
+function focusSession(a, sid) {
+  const s = sel(), turns = new Set(store[a].nodes.filter(n => n.session === sid && n.turn).map(n => n.turn));
+  turns.forEach(t => turnSel(a, t, s));
+  applyAgents({ [a]: s }, { [a]: [sid] });
+  markCommonFor(a, memsInTurns(a, turns));
+  AGENT_KEYS.forEach(k => footer(k));
+  showSession(a, sid);
+}
+
+/* ---------------- drawer ---------------- */
+function chip(memId, dir, fromAgent) {
+  const m = MEMS[memId];
+  const lab = dir === 'out' ? 'saved' : `recalled · ${AG[fromAgent]?.mono || ''}`;
+  return `<button class="mchip${dir === 'out' ? ' out' : ''}" data-mem="${memId}"><span class="k">${lab}</span>${esc(KIND[m.kind].t)}: ${esc(m.short)}</button>`;
+}
+function turnHTML(a, turn, on, onThought) {
+  const g = store[a], nodes = g.nodes.filter(n => n.turn === turn);
+  const u = nodes.find(n => n.type === 'Message' && n.role === 'user'), r = nodes.find(n => n.type === 'Message' && n.role === 'assistant');
+  const ths = nodes.filter(n => n.type === 'Thought');
+  const outOf = id => g.links.filter(l => lid(l.source) === id && (l.type === 'RECALLED' || l.type === 'SAVED')).map(l => g.idx.get(lid(l.target)));
+  let h = `<div class="turn${on ? ' on' : ''}" data-turn="${turn}">`;
+  h += `<div class="msg user"><small>you</small>${esc(u.text)}</div>`;
+  if (ths.length) {
+    h += `<div class="think"><span class="lab">thinking · ${FID[a]}</span>`;
+    ths.forEach(t => {
+      h += `<p class="${t.id === onThought ? 'on' : ''}">${esc(t.text)}</p>`;
+      const refs = outOf(t.id);
+      if (refs.length) h += `<div class="chips">${refs.map(rf => chip(rf.mem, 'in', writerOf(rf.mem))).join('')}</div>`;
+    });
+    h += `</div>`;
+  }
+  h += `<div class="msg reply"><small>${esc(AG[a].name)}</small>${esc(r.text)}</div>`;
+  const saved = outOf(r.id);
+  if (saved.length) h += `<div class="chips">${saved.map(rf => chip(rf.mem, 'out')).join('')}</div>`;
+  return h + `</div>`;
+}
+function showSession(a, sid, onTurn, onNode) {
+  const g = store[a], s = g.idx.get(sid);
+  const turns = [...new Set(g.nodes.filter(n => n.session === sid && n.turn).map(n => n.turn))];
+  let h = `<div class="row"><span class="mono-s">${AG[a].mono}</span><span class="pill">${esc(AG[a].name)} · chat</span><span class="pill">thinking: ${FID[a]}</span><button class="x" aria-label="Close">×</button></div>
+    <h3>${esc(s.label)}</h3>`;
+  h += turns.map(t => turnHTML(a, t, t === onTurn, onNode)).join('');
+  if (FID[a] === 'summary') h += `<p class="note-s">${esc(AG[a].name)} only logs summaries of its thinking, so these thoughts are summaries.</p>`;
+  openDrawer(h);
+  const on = drawer.querySelector('.turn.on');
+  if (on) on.scrollIntoView({ block: 'nearest' });
+}
+function showMemory(m) {
+  const id = m.id, readers = readersOf(id);
+  let h = `<div class="row"><span class="pill g">${KIND[m.kind].t}</span><span class="pill"><span class="mono-s">${AG[m.agent].mono}</span>by ${esc(AG[m.agent].name)}</span>${m.superseded ? '<span class="pill warn">replaced</span>' : ''}<button class="x" aria-label="Close">×</button></div>
+    <h3>${esc(m.text)}</h3>`;
+  const to = MEMS[m.mem].to;
+  if (to) h += `<p class="note-s">Handoff to <b>${esc(AG[to].name)}</b>.</p>`;
+  if (m.superseded) { const n = store.common.idx.get(m.superseded); h += `<p class="note-s">Replaced by: ${chip(n.mem, 'out')}</p>`; }
+  const sup = MEMS[m.mem].supersedes;
+  if (sup && store.common.idx.has('M:' + sup)) h += `<p class="note-s">Replaces: ${chip(sup, 'in', store.common.idx.get('M:' + sup).agent)}</p>`;
+  if (m.src) h += `<div><p class="sub">Where it came from</p><div class="from"><span class="mono-s">${AG[m.agent].mono}</span><span><b>${esc(AG[m.agent].name)}</b> · ${esc(store[m.agent].idx.get(m.src.session).label)}</span></div>${turnHTML(m.agent, m.src.turn, true)}</div>`;
+  else h += `<p class="note-s">Saved directly by ${esc(AG[m.agent].name)} with remember(), not from a chat Hivemind has read.</p>`;
+  if (readers.length) {
+    h += `<div><p class="sub">Recalled by ${plural(readers.length, 'other agent')}</p><ul class="readers">`;
+    readers.forEach(l => {
+      const a = lid(l.target).slice(2);
+      l.by.forEach(th => {
+        const t = store[a].idx.get(th), s = store[a].idx.get(t.session);
+        h += `<li><button data-goturn="${a}|${t.turn}|${t.id}"><span class="who"><span class="mono-s">${AG[a].mono}</span><b>${esc(AG[a].name)}</b> · ${esc(s.label)}</span><span class="th">${esc(t.text)}</span></button></li>`;
+      });
+    });
+    h += `</ul></div>`;
+  } else h += `<p class="note-s">No other agent has recalled this yet.</p>`;
+  openDrawer(h);
+}
+function openDrawer(h) {
+  drawer.innerHTML = h; drawer.hidden = false; drawer.scrollTop = 0;
+}
+drawer.addEventListener('click', e => {
+  if (e.target.closest('.x')) return clearFocus();
+  const m = e.target.closest('[data-mem]'); if (m) return focusMemory(m.dataset.mem);
+  const g = e.target.closest('[data-goturn]');
+  if (g) { const [a, turn, th] = g.dataset.goturn.split('|'); focusTurn(a, turn, th); $('#card-' + a).scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'nearest' }); }
+});
+
+/* ---------------- search chat, thinking and memory ---------------- */
+const q = $('#q'), hits = $('#hits');
+q.addEventListener('input', () => {
+  const v = q.value.trim().toLowerCase();
+  if (!v) { hits.textContent = ''; clearFocus(); return; }
+  let total = 0, graphs = 0;
+  const lit = [];
+  GK.forEach(k => {
+    const set = new Set(store[k].nodes.filter(n => ((n.label || '') + ' ' + (n.text || '') + ' ' + (n.short || '')).toLowerCase().includes(v)).map(n => n.id));
+    if (set.size) { graphs++; if (k !== 'common') lit.push(k); }
+    total += set.size;
+    if (views[k]) views[k].mark(set, new Set(), []);
+  });
+  drawer.hidden = true; focusCards(lit);
+  hits.textContent = total ? `${plural(total, 'match', 'matches')} in ${plural(graphs, 'graph')}` : 'no matches';
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { q.value = ''; hits.textContent = ''; clearFocus(); } });
+
+/* ---------------- rooms open in another tab push each turn here ---------------- */
+try {
+  const bc = new BroadcastChannel('hivemind');
+  bc.onmessage = e => {
+    const msg = e.data;
+    if (!HAS_D3 || !msg || msg.type !== 'turn' || !AG[msg.agent] || !msg.turn) return;
+    // a room may create new memories (a debate decision, a rejected idea): register them, validated
+    Object.entries(msg.mems || {}).forEach(([id, d]) => {
+      if (MEMS[id] || !/^[\w-]{1,64}$/.test(id) || !d || !KIND[d.kind]) return;
+      MEMS[id] = {
+        by: msg.agent, kind: d.kind, short: String(d.short || '').slice(0, 40), text: String(d.text || '').slice(0, 400),
+        topics: (Array.isArray(d.topics) ? d.topics : []).map(String).slice(0, 4), supersedes: MEMS[d.supersedes] ? d.supersedes : undefined,
+      };
+    });
+    const known = ids => (ids || []).filter(id => MEMS[id]);
+    const turn = {
+      user: String(msg.turn.user || ''), reply: String(msg.turn.reply || ''), save: known(msg.turn.save),
+      think: (msg.turn.think || []).map(th => ({ t: String(th.t || ''), recall: known(th.recall) })),
+    };
+    if (!store[msg.agent].idx.has(msg.sid)) addSession(msg.agent, String(msg.sid), String(msg.title || 'room'));
+    addTurn(msg.agent, msg.sid, turn);
+    recordExplorerTurn(msg.agent, msg.sid, turn);
+    views[msg.agent].draw(false);
+    const fresh = derive();
+    views.common.draw(false);
+    fresh.forEach(id => views.common.pulse(id));
+    clock += 1;
+    const act = esc(msg.act || 'took a turn in a room');
+    lastAct[msg.agent] = [now(), act];
+    if (!$('#card-' + msg.agent).classList.contains('focus')) footer(msg.agent);
+    $('#status').textContent = `${SOURCE_STATUS} · ${now()} ${AG[msg.agent].name} ${msg.act || 'took a turn in a room'}`;
+    counts();
+  };
+} catch (e) { /* no BroadcastChannel: rooms still run, this page just won't update from them */ }
+
+/* ---------------- live: new chat and thinking arriving ---------------- */
+const LIVE = [
+  { a: 'antigravity', sid: 'ag_s2', act: 'recalled a <b>Codex finding</b>', turn: {
+      user: 'Will the retry hide real expiry bugs?',
+      think: [{ t: 'recall("expiry") → Codex’s finding: tokens passed at the expiry second.', recall: ['m1'] }, { t: 'That bug is fixed, so the retry only covers clock drift.' }],
+      reply: 'No. The expiry bug is fixed, so the retry only covers clock drift.' } },
+  { a: 'gemini', sid: 'gm_s2', act: 'saved a <b>finding</b>', turn: {
+      user: 'How did the load test go?',
+      think: [{ t: 'Response times stayed flat for the whole run.' }],
+      reply: 'The session endpoint holds up under load after the auth fix.', save: ['m10'] } },
+  { a: 'claude-code', sid: 'cc_s2', act: 'decided to <b>move the cache to Redis</b>', turn: {
+      user: 'Should we switch to Redis?',
+      think: [{ t: 'recall("Redis") → Gemini: configured, unused.', recall: ['m7'] }, { t: 'A shared cache fixes the four-way split.' }],
+      reply: 'Yes. Move the cache to Redis with a 5-minute TTL.', save: ['m11'] } },
+];
+let li = 0;
+const timer = setInterval(() => {
+  if (IS_LIVE) { clearInterval(timer); return; }  // sample-data demo events only
+  if (!HAS_D3 || document.hidden) return;
+  if (li >= LIVE.length) { clearInterval(timer); return; }
+  const ev = LIVE[li++];
+  clock += 3;
+  addTurn(ev.a, ev.sid, ev.turn);
+  recordExplorerTurn(ev.a, ev.sid, ev.turn);
+  views[ev.a].draw(false);
+  const fresh = derive();
+  views.common.draw(false);
+  fresh.forEach(id => views.common.pulse(id));
+  lastAct[ev.a] = [now(), ev.act];
+  if (!$('#card-' + ev.a).classList.contains('focus')) footer(ev.a);
+  $('#status').textContent = `${SOURCE_STATUS} · ${now()} ${AG[ev.a].name} ${ev.act.replace(/<[^>]+>/g, '')}`;
+  counts();
+}, 5000);
+
+/* deep link: index.html#m1 opens that memory (used for demos and screenshots) */
+const deep = location.hash.slice(1);
+if (HAS_D3 && MEMS[deep]) setTimeout(() => focusMemory(deep), 400);
+});
+</script>
+</body>
+</html>

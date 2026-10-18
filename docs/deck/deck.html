@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hivemind deck</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* 10 slides, 1920x1080 each. Rendered to PNG/PDF/PPTX by deck/build-v3.js.
+   Same visual language as the product video: near-black green, Geist, one green accent. */
+:root{
+  --bg:#050B08; --panel:rgba(12,26,19,.86); --ink:#F2F7F4; --muted:#8FA59A; --faint:#5A7065;
+  --green:#22C55E; --deep:#16A34A; --glow:rgba(34,197,94,.45); --line:rgba(143,165,154,.18); --red:#E5484D;
+  --f:'Geist',system-ui,sans-serif; --mono:'Geist Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0}
+body{background:#000;font-family:var(--f);color:var(--ink);-webkit-font-smoothing:antialiased}
+.s{width:1920px;height:1080px;position:relative;overflow:hidden;padding:96px 120px;
+  background:radial-gradient(1100px 700px at 78% 12%,#0F2A1C 0%,var(--bg) 62%);page-break-after:always}
+.s::before{content:"";position:absolute;inset:0;opacity:.35;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:80px 80px;
+  -webkit-mask-image:radial-gradient(900px 600px at 60% 40%,#000,transparent)}
+.s::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.5) 100%)}
+.s>*{position:relative;z-index:1}
+.chip{display:inline-flex;align-items:center;gap:10px;padding:9px 18px;border-radius:999px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45);
+  color:var(--green);font:500 19px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.chip::before{content:"";width:9px;height:9px;border-radius:9px;background:var(--green);box-shadow:0 0 12px var(--green)}
+h1{font-weight:800;letter-spacing:-.05em;line-height:.98}
+h2{font-size:68px;font-weight:700;letter-spacing:-.045em;line-height:1.02;margin-top:22px;max-width:1600px}
+.g{color:var(--green);text-shadow:0 0 40px var(--glow)}
+.m{color:var(--muted)}
+.mono{font-family:var(--mono)}
+.foot{position:absolute;left:120px;right:120px;bottom:44px;display:flex;justify-content:space-between;font:500 16px var(--mono);color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+.card{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:22px;box-shadow:0 30px 70px rgba(0,0,0,.45)}
+.card.on{border-color:rgba(34,197,94,.55);background:linear-gradient(160deg,rgba(34,197,94,.18),rgba(8,18,13,.92));box-shadow:0 0 70px rgba(34,197,94,.2)}
+.big{font-weight:800;letter-spacing:-.06em;line-height:.9;color:var(--green);text-shadow:0 0 60px var(--glow)}
+.lbl{font:500 18px var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.dot{display:inline-block;width:.42em;height:.42em;border-radius:1em;background:var(--green);box-shadow:0 0 0 .1em rgba(34,197,94,.18),0 0 .6em var(--glow)}
+.browser{border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 60px 140px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08),0 0 120px rgba(34,197,94,.18)}
+.browser .bar{height:40px;background:#EEF2F0;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #DDE3E0;font:14px var(--mono);color:#5B6B63}
+.browser .bar i{width:12px;height:12px;border-radius:12px;display:inline-block}
+.browser .bar span{margin-left:18px;background:#fff;border:1px solid #DDE3E0;border-radius:7px;padding:4px 12px}
+.browser img{display:block;width:100%}
+.callout{position:absolute;padding:16px 22px;border-radius:16px;background:rgba(5,11,8,.9);border:1px solid rgba(34,197,94,.45);box-shadow:0 20px 50px rgba(0,0,0,.5);backdrop-filter:blur(10px)}
+.callout b{display:block;font-size:44px;font-weight:800;color:var(--green);letter-spacing:-.04em;line-height:1}
+.callout em{font-style:normal;font:500 16px var(--mono);color:var(--muted);letter-spacing:.07em;text-transform:uppercase}
+.orb{width:64px;height:64px;border-radius:64px;display:grid;place-items:center;font-weight:800;font-size:28px;color:#08100C;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.oc{background:radial-gradient(circle at 35% 30%,#E8916B,#1a2620 78%);box-shadow:0 0 30px #E8916B55}
+.ox{background:radial-gradient(circle at 35% 30%,#E8EDEA,#1a2620 78%);box-shadow:0 0 30px #E8EDEA44}
+.og{background:radial-gradient(circle at 35% 30%,#7AA7FF,#1a2620 78%);box-shadow:0 0 30px #7AA7FF55}
+.oa{background:radial-gradient(circle at 35% 30%,#C08BFF,#1a2620 78%);box-shadow:0 0 30px #C08BFF55}
+.bar2{height:30px;border-radius:30px;background:rgba(255,255,255,.06);overflow:hidden}
+.bar2>div{height:100%;border-radius:30px;background:rgba(143,165,154,.45)}
+.bar2>div.on{background:linear-gradient(90deg,var(--deep),var(--green));box-shadow:0 0 26px var(--glow)}
+table{border-collapse:collapse}
+code{font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<!-- 1 · cover -->
+<section class="s" id="s1">
+  <div style="display:flex;gap:16px"><span class="chip">Graph Hacks · Track 02</span><span class="chip">Agent memory &amp; coordination</span></div>
+  <h1 style="font-size:190px;margin-top:150px;display:flex;align-items:center;gap:40px"><span class="dot"></span>Hivemind</h1>
+  <p style="font-size:58px;font-weight:500;color:var(--muted);letter-spacing:-.03em;margin-top:30px;max-width:1000px;line-height:1.1">One shared memory for every AI coding agent, <span style="color:var(--ink)">built on FalkorDB.</span></p>
+  <div style="position:absolute;right:-140px;top:150px;width:980px;transform:perspective(2200px) rotateY(-18deg) rotateX(6deg)" class="browser">
+    <div class="bar"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>127.0.0.1:5199 · workspace new-game</span></div>
+    <img src="shots/v3-live.png">
+  </div>
+  <div style="position:absolute;left:120px;bottom:120px;display:flex;gap:70px">
+    <div><div class="big" style="font-size:96px">4</div><div class="lbl" style="margin-top:12px">agents, equal peers</div></div>
+    <div><div class="big" style="font-size:96px">5</div><div class="lbl" style="margin-top:12px">FalkorDB graphs</div></div>
+    <div><div class="big" style="font-size:96px">10</div><div class="lbl" style="margin-top:12px">MCP tools</div></div>
+    <div><div class="big" style="font-size:96px">1,595</div><div class="lbl" style="margin-top:12px">real messages imported</div></div>
+  </div>
+  <div class="foot"><span>Team Handsome Squidward</span><span>WeMakeDevs × FalkorDB</span></div>
+</section>
+
+<!-- 2 · problem -->
+<section class="s" id="s2">
+  <span class="chip">The problem</span>
+  <h2>Every agent you use works alone. <span class="m">You are the copy-paste layer between them.</span></h2>
+  <p style="font-size:30px;color:var(--muted);margin-top:34px;max-width:820px;line-height:1.4">One real project: <span style="color:var(--ink)">249,870 tokens</span> of decisions, findings and dead ends, split across four agents that cannot read each other.</p>
+  <div style="position:absolute;left:120px;right:120px;top:520px;display:grid;grid-template-columns:repeat(4,1fr);gap:28px">
+    <div class="card" style="padding:34px"><div style="display:flex;align-items:center;gap:18px"><div class="orb oc">C</div><div style="font-size:30px;font-weight:700">Claude Code</div></div>
+      <div class="big" style="font-size:86px;margin-top:34px">1,345</div><div class="lbl" style="margin-top:10px">messages · 42 sessions</div><div class="mono m" style="margin-top:22px;font-size:18px">191,551 tokens</div></div>
+    <div class="card" style="padding:34px"><div style="display:flex;align-items:center;gap:18px"><div class="orb ox">X</div><div style="font-size:30px;font-weight:700">Codex</div></div>
+      <div class="big" style="font-size:86px;margin-top:34px">244</div><div class="lbl" style="margin-top:10px">messages · 32 sessions</div><div class="mono m" style="margin-top:22px;font-size:18px">54,861 tokens</div></div>
+    <div class="card" style="padding:34px"><div style="display:flex;align-items:center;gap:18px"><div class="orb oa">A</div><div style="font-size:30px;font-weight:700">Antigravity</div></div>
+      <div class="big" style="font-size:86px;margin-top:34px">6</div><div class="lbl" style="margin-top:10px">messages · 1 database</div><div class="mono m" style="margin-top:22px;font-size:18px">3,458 tokens</div></div>
+    <div class="card" style="padding:34px"><div style="display:flex;align-items:center;gap:18px"><div class="orb og">N</div><div style="font-size:30px;font-weight:700">Project notes</div></div>
+      <div class="big" style="font-size:86px;margin-top:34px">445</div><div class="lbl" style="margin-top:10px">note chunks · 21 files</div><div class="mono m" style="margin-top:22px;font-size:18px">scattered across folders</div></div>
+  </div>
+  <div style="position:absolute;left:120px;bottom:110px;font-size:30px;font-weight:600">0 of these are visible to the other agents. <span class="g">Hivemind makes them one graph.</span></div>
+  <div class="foot"><span>Source: frozen local snapshot, 2026-10-18 · o200k_base token counts</span><span>02</span></div>
+</section>
+
+<!-- 3 · what's different -->
+<section class="s" id="s3">
+  <span class="chip">What's different</span>
+  <h2 style="font-size:62px;max-width:1700px">Other frameworks make agents argue. <span class="g">You never see it.</span></h2>
+  <table style="position:absolute;left:120px;right:120px;top:330px;width:1680px;font-size:30px">
+    <tr class="lbl"><td style="width:300px;padding-bottom:20px"></td><td style="width:660px;padding-bottom:20px">Typical agent-debate frameworks</td><td style="padding:0 0 20px 40px;color:var(--green)">Hivemind</td></tr>
+    <tbody>
+      <tr><td class="m" style="padding:26px 0;border-top:1px solid var(--line)">Runs on</td><td style="border-top:1px solid var(--line);color:#a9b8b0"><span style="color:var(--red)">✕</span>&nbsp; Paid API keys, billed per token</td><td style="border-top:1px solid var(--line);padding-left:40px;font-weight:700"><span class="g">✓</span>&nbsp; The CLIs you already subscribe to</td></tr>
+      <tr><td class="m" style="padding:26px 0;border-top:1px solid var(--line)">While they argue</td><td style="border-top:1px solid var(--line);color:#a9b8b0"><span style="color:var(--red)">✕</span>&nbsp; Hidden API calls, logs afterwards</td><td style="border-top:1px solid var(--line);padding-left:40px;font-weight:700"><span class="g">✓</span>&nbsp; Every turn and thought, live in a web room</td></tr>
+      <tr><td class="m" style="padding:26px 0;border-top:1px solid var(--line)">Memory</td><td style="border-top:1px solid var(--line);color:#a9b8b0"><span style="color:var(--red)">✕</span>&nbsp; Per agent or per run, then gone</td><td style="border-top:1px solid var(--line);padding-left:40px;font-weight:700"><span class="g">✓</span>&nbsp; One common graph + one graph per agent</td></tr>
+      <tr><td class="m" style="padding:26px 0;border-top:1px solid var(--line)">Provenance</td><td style="border-top:1px solid var(--line);color:#a9b8b0"><span style="color:var(--red)">✕</span>&nbsp; No trail of who learned what</td><td style="border-top:1px solid var(--line);padding-left:40px;font-weight:700"><span class="g">✓</span>&nbsp; WROTE and RECALLED edges on every memory</td></tr>
+      <tr><td class="m" style="padding:26px 0;border-top:1px solid var(--line)">Who decides</td><td style="border-top:1px solid var(--line);color:#a9b8b0"><span style="color:var(--red)">✕</span>&nbsp; Orchestration code you write</td><td style="border-top:1px solid var(--line);padding-left:40px;font-weight:700"><span class="g">✓</span>&nbsp; Graph keeps score, a human confirms</td></tr>
+      <tr><td class="m" style="padding:26px 0;border-top:1px solid var(--line)">Agents</td><td style="border-top:1px solid var(--line);color:#a9b8b0"><span style="color:var(--red)">✕</span>&nbsp; Roles inside one framework</td><td style="border-top:1px solid var(--line);padding-left:40px;font-weight:700"><span class="g">✓</span>&nbsp; Claude Code, Codex, Gemini, Antigravity as equals</td></tr>
+    </tbody>
+  </table>
+  <div style="position:absolute;left:1080px;top:316px;width:740px;height:620px;border-radius:24px;border:1px solid rgba(34,197,94,.45);background:linear-gradient(180deg,rgba(34,197,94,.12),rgba(34,197,94,.02));z-index:0"></div>
+  <div class="foot"><span>Comparison is with the common pattern, not a named product</span><span>03</span></div>
+</section>
+
+<!-- 4 · how it works -->
+<section class="s" id="s4">
+  <span class="chip">How it works</span>
+  <h2 style="font-size:62px;max-width:1700px">Read the logs agents already write. <span class="g">Remember</span> once, recall everywhere.</h2>
+  <div style="position:absolute;left:120px;right:120px;top:400px;display:grid;grid-template-columns:repeat(4,1fr);gap:26px">
+    <div class="card" style="padding:34px;height:440px"><div class="big" style="font-size:72px">01</div><div style="font-size:34px;font-weight:700;margin-top:26px">Capture</div><p class="m" style="font-size:24px;margin-top:14px;line-height:1.4">A daemon on each laptop tails Claude Code and Codex logs; any agent can also write over MCP. Secrets are redacted before anything leaves the file.</p></div>
+    <div class="card" style="padding:34px;height:440px"><div class="big" style="font-size:72px">02</div><div style="font-size:34px;font-weight:700;margin-top:26px">Per-agent graph</div><p class="m" style="font-size:24px;margin-top:14px;line-height:1.4">Sessions, prompts, thoughts and replies become one graph per agent, in order, with full or summary reasoning marked.</p></div>
+    <div class="card on" style="padding:34px;height:440px"><div class="big" style="font-size:72px">03</div><div style="font-size:34px;font-weight:700;margin-top:26px">Common graph</div><p class="m" style="font-size:24px;margin-top:14px;line-height:1.4">Findings, decisions, facts and procedures land in a shared graph, with who wrote them and what they supersede.</p></div>
+    <div class="card" style="padding:34px;height:440px"><div class="big" style="font-size:72px">04</div><div style="font-size:34px;font-weight:700;margin-top:26px">Recall over MCP</div><p class="m" style="font-size:24px;margin-top:14px;line-height:1.4">Any agent calls <code class="g">graph_search</code>. Each recall by another agent is saved as a RECALLED edge.</p></div>
+  </div>
+  <div class="mono" style="position:absolute;left:120px;bottom:110px;font-size:22px;color:var(--muted)"><span class="g">claude -p</span> · <span class="g">codex exec</span> · <span class="g">gemini -p</span> &nbsp;— your subscriptions do the LLM work. No API key required.</div>
+  <div class="foot"><span>One server · one FalkorDB · one daemon per laptop</span><span>04</span></div>
+</section>
+
+<!-- 5 · graph explorer -->
+<section class="s" id="s5">
+  <span class="chip">Product · Graph</span>
+  <h2 style="max-width:760px;font-size:62px">See what every agent knows, <span class="g">in one graph.</span></h2>
+  <p class="m" style="font-size:27px;margin-top:28px;max-width:640px;line-height:1.45">3D explorer on the live FalkorDB workspace. Orbit, filter by agent or layer, search every chat, thought and memory, open any node to read its source.</p>
+  <div style="position:absolute;left:120px;bottom:120px;display:flex;flex-direction:column;gap:18px">
+    <div class="mono" style="font-size:22px"><span class="g">●</span>&nbsp; agents · sessions · messages · thoughts · memories · topics</div>
+    <div class="mono" style="font-size:22px"><span class="g">●</span>&nbsp; reasoning fidelity kept: full vs summary</div>
+    <div class="mono" style="font-size:22px"><span class="g">●</span>&nbsp; paste any chat to graph it, local only</div>
+  </div>
+  <div class="browser" style="position:absolute;right:100px;top:150px;width:1040px;transform:perspective(2400px) rotateY(-8deg)">
+    <div class="bar"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>127.0.0.1:5199/index.html</span></div>
+    <img src="shots/v3-live.png">
+  </div>
+  <div class="callout" style="right:60px;top:110px"><b>1,595</b><em>messages, live</em></div>
+  <div class="callout" style="right:960px;top:560px"><b>445</b><em>memory notes</em></div>
+  <div class="callout" style="right:80px;top:800px"><b>500</b><em>nodes drawn · full export kept</em></div>
+  <div class="foot"><span>Real screenshot · local FalkorDB workspace “new-game”</span><span>05</span></div>
+</section>
+
+<!-- 6 · rooms -->
+<section class="s" id="s6">
+  <span class="chip">Product · Rooms</span>
+  <h2 style="font-size:62px">Agents take turns, think out loud, <span class="g">and argue for the best idea.</span></h2>
+  <div class="browser" style="position:absolute;left:120px;top:330px;width:1000px">
+    <div class="bar"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span>127.0.0.1:5199/rooms.html · debate</span></div>
+    <img src="shots/v3-rooms.png">
+  </div>
+  <div style="position:absolute;left:1190px;top:340px;width:610px;display:flex;flex-direction:column;gap:22px">
+    <div class="card" style="padding:28px 32px"><div class="lbl">Relay</div><div style="font-size:28px;font-weight:600;margin-top:10px;line-height:1.3">Each turn shows what the agent <span class="g">recalled</span>, its thinking stream, its answer and what it <span class="g">saved</span>.</div></div>
+    <div class="card on" style="padding:28px 32px"><div class="lbl" style="color:var(--green)">Debate</div><div style="font-size:28px;font-weight:600;margin-top:10px;line-height:1.3">Propose → argue → vote. Score = 2 × votes + supports − standing attacks. <span class="g">You confirm the winner.</span></div></div>
+    <div style="display:flex;gap:22px">
+      <div class="card" style="padding:24px 28px;flex:1"><div class="big" style="font-size:64px">4</div><div class="lbl" style="margin-top:8px">agents, any model</div></div>
+      <div class="card" style="padding:24px 28px;flex:1"><div class="big" style="font-size:64px">3</div><div class="lbl" style="margin-top:8px">rounds per debate</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>Real screenshot · demo room “How should we cache the API?”</span><span>06</span></div>
+</section>
+
+<!-- 7 · falkordb -->
+<section class="s" id="s7">
+  <span class="chip">Under the hood</span>
+  <h2>Five graphs in <span class="g">one FalkorDB.</span></h2>
+  <div style="position:absolute;left:120px;top:330px;width:820px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card" style="padding:24px 28px;display:flex;gap:18px;align-items:center"><div class="orb oc">C</div><div><div style="font-size:26px;font-weight:700">agent:claude-code</div><div class="mono m" style="font-size:17px">chat + thinking</div></div></div>
+      <div class="card" style="padding:24px 28px;display:flex;gap:18px;align-items:center"><div class="orb ox">X</div><div><div style="font-size:26px;font-weight:700">agent:codex</div><div class="mono m" style="font-size:17px">chat + thinking</div></div></div>
+      <div class="card" style="padding:24px 28px;display:flex;gap:18px;align-items:center"><div class="orb og">G</div><div><div style="font-size:26px;font-weight:700">agent:gemini</div><div class="mono m" style="font-size:17px">chat + thinking</div></div></div>
+      <div class="card" style="padding:24px 28px;display:flex;gap:18px;align-items:center"><div class="orb oa">A</div><div><div style="font-size:26px;font-weight:700">agent:antigravity</div><div class="mono m" style="font-size:17px">chat + thinking</div></div></div>
+    </div>
+    <div class="card on" style="padding:30px 34px;margin-top:20px"><div style="font-size:34px;font-weight:800">common</div><div class="mono" style="font-size:20px;color:var(--green);margin-top:10px;line-height:1.7">(:Agent)-[:WROTE]-&gt;(:Memory)<br>(:Memory)-[:RECALLED {count, thought_ids}]-&gt;(:Agent)<br>(:Memory)-[:SUPERSEDES]-&gt;(:Memory)<br>(:Memory)-[:ABOUT]-&gt;(:Concept)</div></div>
+  </div>
+  <div class="card" style="position:absolute;left:1000px;top:330px;width:800px;padding:34px 38px">
+    <div class="lbl">recall · hivemind/store.py</div>
+    <pre class="mono" style="font-size:21px;line-height:1.6;margin-top:18px;color:#cfe0d6;white-space:pre-wrap"><span class="g">CALL</span> db.idx.fulltext.queryNodes('Memory', $q)
+  <span class="g">YIELD</span> node, score
+<span class="g">WHERE</span> node.status = 'active'
+<span class="g">OPTIONAL MATCH</span> (node)-[r:RECALLED]-&gt;()
+<span class="g">WITH</span> node, score, count(r) <span class="g">AS</span> uses
+<span class="g">RETURN</span> node.id, node.kind, node.text, uses
+<span class="g">ORDER BY</span> score <span class="g">DESC</span>, uses <span class="g">DESC</span></pre>
+    <div class="lbl" style="margin-top:30px">10 MCP tools</div>
+    <div class="mono" style="font-size:20px;margin-top:12px;line-height:1.7;color:var(--ink)">sync · recall · remember · peers · handoff<br>respond · trace · checkpoint · <span class="g">graph_search · graph_open</span></div>
+  </div>
+  <div class="foot"><span>Query from hivemind/store.py · tool list from runtime proof</span><span>07</span></div>
+</section>
+
+<!-- 8 · results -->
+<section class="s" id="s8">
+  <span class="chip">Results · held-out, 18 questions</span>
+  <h2 style="font-size:62px;max-width:1700px">Graph memory finds the evidence <span class="g">flat search misses.</span></h2>
+  <div style="position:absolute;left:120px;top:360px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;width:1680px">
+    <div class="card on" style="padding:36px 40px"><div class="big" style="font-size:150px">2×</div><div style="font-size:30px;font-weight:700;margin-top:18px">more complete cases</div><div class="mono m" style="font-size:19px;margin-top:10px">10 / 18 vs 5 / 18 at 800 tokens</div></div>
+    <div class="card on" style="padding:36px 40px"><div class="big" style="font-size:150px">+75%</div><div style="font-size:30px;font-weight:700;margin-top:18px">evidence groups found</div><div class="mono m" style="font-size:19px;margin-top:10px">21 / 33 vs 12 / 33 at 800 tokens</div></div>
+    <div class="card on" style="padding:36px 40px"><div class="big" style="font-size:150px">−34%</div><div style="font-size:30px;font-weight:700;margin-top:18px">context tokens</div><div class="mono m" style="font-size:19px;margin-top:10px">14,068 vs 21,393 (flat @ 1,200), still more found</div></div>
+  </div>
+  <div style="position:absolute;left:120px;top:770px;width:1680px;display:grid;grid-template-columns:1fr 1fr;gap:60px">
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:24px;font-weight:600;margin-bottom:10px"><span>Hybrid graph · held-out</span><span class="mono g">10 / 18</span></div><div class="bar2"><div class="on" style="width:55.6%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:24px;font-weight:600;margin:18px 0 10px;color:var(--muted)"><span>Flat search · held-out</span><span class="mono">5 / 18</span></div><div class="bar2"><div style="width:27.8%"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:24px;font-weight:600;margin-bottom:10px"><span>Hybrid graph · dev split</span><span class="mono g">8 / 12</span></div><div class="bar2"><div class="on" style="width:66.7%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:24px;font-weight:600;margin:18px 0 10px;color:var(--muted)"><span>Flat search · dev split</span><span class="mono">6 / 12</span></div><div class="bar2"><div style="width:50%"></div></div>
+    </div>
+  </div>
+  <div class="foot"><span>Local FalkorDB · 1,595 redacted messages · measures evidence retrieval, not answer accuracy</span><span>08</span></div>
+</section>
+
+<!-- 9 · proof + limits -->
+<section class="s" id="s9">
+  <span class="chip">Proof, and what we don't claim</span>
+  <h2 style="font-size:62px;max-width:1700px">Every number above comes from <span class="g">a run you can repeat.</span></h2>
+  <div style="position:absolute;left:120px;top:350px;width:1000px;display:grid;grid-template-columns:1fr 1fr;gap:22px">
+    <div class="card" style="padding:30px 34px"><div class="big" style="font-size:80px">401</div><div class="lbl" style="margin-top:10px">without token · 200 with</div></div>
+    <div class="card" style="padding:30px 34px"><div class="big" style="font-size:80px">0 / 120</div><div class="lbl" style="margin-top:10px">context rechecks mismatched</div></div>
+    <div class="card" style="padding:30px 34px"><div class="big" style="font-size:80px">54</div><div class="lbl" style="margin-top:10px">Python tests + 2 Node suites</div></div>
+    <div class="card" style="padding:30px 34px"><div class="big" style="font-size:80px">✓</div><div class="lbl" style="margin-top:10px">survives restart · hashes frozen</div></div>
+  </div>
+  <div class="card" style="position:absolute;left:1160px;top:350px;width:640px;padding:34px 38px;border-color:rgba(229,72,77,.35)">
+    <div class="lbl" style="color:#F08A8D">Known limits, kept visible</div>
+    <ul style="font-size:24px;line-height:1.5;margin-top:18px;padding-left:24px;color:#d7e3dc">
+      <li style="margin-bottom:12px">“Latest request” questions: <b>0 / 2</b> for both retrievers</li>
+      <li style="margin-bottom:12px">Scores evidence retrieval, not answer accuracy</li>
+      <li style="margin-bottom:12px">No billing or latency savings claimed</li>
+      <li style="margin-bottom:12px">Gemini and Antigravity log parsers pending; both write through MCP today</li>
+      <li>Holdout is now a regression check, never used for tuning</li>
+    </ul>
+  </div>
+  <div class="foot"><span>artifacts/local-falkordb/runtime-proof.json · artifacts/context-graph-hard/REPORT.md</span><span>09</span></div>
+</section>
+
+<!-- 10 · close -->
+<section class="s" id="s10">
+  <div style="position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <h1 style="font-size:180px;display:flex;align-items:center;gap:40px"><span class="dot"></span>Hivemind</h1>
+    <p style="font-size:56px;font-weight:500;color:var(--muted);margin-top:26px;letter-spacing:-.03em">Let your agents think together.</p>
+    <div style="display:flex;gap:26px;margin-top:80px">
+      <div class="card" style="padding:26px 34px;text-align:left;width:440px"><div class="lbl" style="color:var(--green)">Next</div><div style="font-size:26px;font-weight:600;margin-top:10px">Embeddings + query rewriting, scored on a newly sealed holdout</div></div>
+      <div class="card" style="padding:26px 34px;text-align:left;width:440px"><div class="lbl" style="color:var(--green)">Next</div><div style="font-size:26px;font-weight:600;margin-top:10px">Antigravity parser and latest-turn recall</div></div>
+      <div class="card" style="padding:26px 34px;text-align:left;width:440px"><div class="lbl" style="color:var(--green)">Next</div><div style="font-size:26px;font-weight:600;margin-top:10px">Shared team workspaces on one server</div></div>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:70px"><span class="chip">Graph Hacks · Track 02</span><span class="chip">Built on FalkorDB</span><span class="chip">Team Handsome Squidward</span></div>
+  </div>
+</section>
+
+</body>
+</html>

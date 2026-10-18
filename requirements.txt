@@ -1,0 +1,9 @@
+fastapi>=0.141
+uvicorn>=0.52
+falkordb>=1.8
+redis>=8.1
+mcp>=1.29
+anyio>=4.14
+httpx>=0.28
+tiktoken>=0.14
+pytest>=9.1
